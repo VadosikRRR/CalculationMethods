@@ -5,6 +5,7 @@ from sympy import symbols, diff, lambdify, sympify
 class RootFinder:
     def __init__(self):
         self.big_value = 1000
+        self.small_value = 10e-4
         pass
 
     def start(self):
@@ -14,21 +15,25 @@ class RootFinder:
             f"\nМетод Бисекции\nx = {result}\n"
             f"Длина конечного интервала = {delta}\n"
             f"Количество итераций = {iter}\n"
+            f"Модуль невязки = {abs(self.func(result))}\n"
         )
 
         result, iter = self.solve_by_newtons_method()
         print(
             f"\nМетод Ньютона\nx = {result}\nКоличество итераций = {iter}\n"
+            f"Модуль невязки = {abs(self.func(result))}\n"
         )
 
         result, iter = self.solve_by_modified_newtons_method()
         print(
             f"\nУсовершенствованный метод Ньютона\nx = {result}\nКоличество итераций = {iter}\n"
+            f"Модуль невязки = {abs(self.func(result))}\n"
         )
 
         result, iter = self.solve_by_secant_method()
         print(
             f"\nМетод секущих\nx = {result}\nКоличество итераций = {iter}\n"
+            f"Модуль невязки = {abs(self.func(result))}\n"
         )
 
     def input_data(self):
@@ -61,7 +66,7 @@ class RootFinder:
             y1 = y2
 
         print(
-            f"После процедуры отделения корней на промежутке [{A}, {B}] при N = {int(N)} "
+            f"\nПосле процедуры отделения корней на промежутке [{A}, {B}] при N = {int(N)} "
             "были найдены следующие промежутки, содержащие корень нечётной степени:"
         )
 
@@ -69,7 +74,7 @@ class RootFinder:
             print(f"{ind + 1}: [{intervals[ind][0], intervals[ind][1]}]")
 
         choice = int(input(
-            "Введите номер отрезка, на котором хотите найти корень или" 
+            "\nВведите номер отрезка, на котором хотите найти корень или" 
             "введите -1, если хотите провести процедуру отделение корней заного.\n"
         ))
         
@@ -126,14 +131,41 @@ class RootFinder:
             delta = self.interval[1] - self.interval[0] * random()
 
     def solve_by_secant_method(self):
-        x1 = self.interval[0]
-        x2 = self.interval[1]
-        for iter in range(1, 1001):
-            x3 = x2 - 1.618 * self.func(x2) / (self.func(x2) - self.func(x1))
-            if abs(x3 - x2) < self.eps:
-                return x3, iter
-            
-            x1 = x2
-            x2 = x3
+        delta1 = 0
+        delta2 = 0
+        while True:
+            x1 = self.interval[0] + delta1
+            x2 = self.interval[1] + delta2
+            for iter in range(1, 1001):
+                x3 = x2 - 1.618 * self.func(x2) * (x2 - x1) / (self.func(x2) - self.func(x1))
+                if abs(x3 - x2) < self.eps:
+                    return x3, iter
+                
+                x1, x2 = x2, x3
 
-        raise(Exception("Baad, very baad"))
+            delta1 = self.interval[1] - self.interval[0] * random()
+            delta2 = self.interval[1] - self.interval[0] * random()
+
+    def solve_task(self, func, eps, start_interval, end_interval, method):
+        """
+            Methods:
+                1: Метод бисекции
+                2: Метод Ньютона
+                3: Усовершенствованный метод бисекции
+                4: Метод секущих
+        """
+
+        self.func = func
+        self.eps = eps
+        self.interval = (start_interval, end_interval)
+
+        if method == 1:
+            result, _, _ = self.solve_by_bisection()
+        elif method == 2:
+            result, _ = self.solve_by_newtons_method()
+        elif method == 3:
+           result, _ =  self.solve_by_modified_newtons_method()
+        else:
+            result, _ = self.solve_by_secant_method()
+        
+        return result
